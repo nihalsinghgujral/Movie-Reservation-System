@@ -1,0 +1,145 @@
+SQL/PLSQL CODE
+create table employee(emp_id number primary key,user_name
+varchar(12),passw varchar(12));
+insert into employee values( 102003393 ,'Madaline' ,'Barnes');
+insert into employee values(102003395,'Adele', 'Campbell');
+insert into employee values(102015091,'Sawyer','Perry');
+insert into employee values(102008089,'Nicholas', 'Lloyd');
+insert into employee values( 102017167 ,'Albert', 'Ross');
+insert into employee values(102102086,'Chelsea', 'Morrison');
+select * from employee;
+create table movie (
+mov_id INT,
+mov_title VARCHAR(50),
+director VARCHAR(50),
+duration INT,
+cast VARCHAR(50),
+description VARCHAR(50)
+);
+insert into movie (mov_id, mov_title, director, duration, cast, description)
+values(1,'Flashpoint','Tawnya',1,'Arney','Action|Adventure|Crime|Mystery|
+Thriller');
+insert into movie (mov_id, mov_title, director, duration, cast, description)
+values (3, 'Groomsmen, The', 'Haily', 3, 'Cobb', 'Comedy|Drama|Romance');
+insert into movie (mov_id, mov_title, director, duration, cast, description)
+values (4, 'Already Dead', 'Brynne', 4, 'Mattias', 'Action|Fantasy|Thriller');
+insert into movie (mov_id, mov_title, director, duration, cast, description)
+values (5, 'Four Horsemen', 'Jodee', 5, 'Georges', 'Documentary');
+insert into movie (mov_id, mov_title, director, duration, cast, description)
+values (6, 'Glenn Killing på Berns', 'Madel', 6, 'Erin', 'Comedy');
+insert into movie (mov_id, mov_title, director, duration, cast, description)
+values (7, 'Business of Strangers, The', 'Fanya', 7, 'Glenden',
+'Action|Drama|Thriller');
+select * from movie;
+create table auditorium (
+audi_id VARCHAR(50),
+no_of_seats INT
+);
+insert into auditorium (audi_id, no_of_seats) values ('8298926722', 101);
+insert into auditorium (audi_id, no_of_seats) values ('9715589162', 102);
+insert into auditorium (audi_id, no_of_seats) values ('1318268923', 103);
+insert into auditorium (audi_id, no_of_seats) values ('7769002761', 104);
+insert into auditorium (audi_id, no_of_seats) values ('0300560915', 105);
+insert into auditorium (audi_id, no_of_seats) values ('9123619252', 600);
+select * from auditorium;
+create table screening(scree_id number primary key ,show_time date);
+create table seat_status(seat_id number primary key,seat_no number);
+create table reservation(res_id number primary key,scree_id number,
+foreign key(scree_id)references screening,emp_id number ,foreign
+key(emp_id) references employee,reservation_type varchar(12),seat_id
+number,foreign key(seat_id) references seat_status);
+insert into seat_status values(12,123);
+insert into screening values(45,'12-may-22');
+insert into reservation values(34,45,102003393,'yes',12);
+insert into reservation values(12,45,102102086,'yes',12);
+CODING IN PL/SQL:
+--cursor for checking total seats are 250 only:
+declare
+cursor c1 is select * from auditorium;
+rec c1%rowtype;
+begin
+open c1;
+loop
+fetch c1 into rec;
+exit when c1%notfound or c1%rowcount > 250;
+dbms_output.put_line('The audi_id is'|| rec.audi_id ||'.'|| 'The no of seats are'||
+rec.no_of_seats);
+end loop;
+close c1;
+end;
+--for declaring username by giving emp_id as a parameter
+declare
+cursor c1(eid number) is select * from employee where emp_id=eid;
+rec c1%rowtype;
+begin
+open c1(102003393);
+loop
+fetch c1 into rec;
+exit when c1%notfound;
+dbms_output.put_line(rec.user_name);
+end loop;
+close c1;
+end;
+--trigger creation
+create or replace trigger mov_duration
+before update of duration on movie
+for each row when(new.duration-old.duration > 0)
+declare
+diff number;
+begin
+diff:=:new.duration-:old.duration;
+dbms_output.put_line(:old.duration);
+dbms_output.put_line(:new.duration);
+end;
+create or replace trigger print
+before insert or update or delete on employee
+for each row
+begin
+if inserting then
+dbms_output.put_line('inserting operation');
+elsif deleting then
+dbms_output.put_line('deleting operation');
+else
+dbms_output.put_line('update operation');
+end if;
+end;
+create or replace trigger scree_sunday
+after insert or update or delete on screening
+begin
+if upper(to_char(sysdate,'day'))='sunday' then
+raise_application_error(-20022,'No movie shows this day');
+end if;
+end;
+declare
+id number;
+procedure mov(mov_id number) is
+title number;
+mov_exc exception;
+begin
+select mov_title into title from movie where id=mov_id;
+if title is null then
+raise mov_exc;
+else
+update movie set movie_title='baadshah' where id=mov_id;
+end if;
+exception
+when no_data_found then
+dbms_output.put_line('no such data');
+when mov_exc then
+dbms_output.put_line('movie title is null');
+end ;
+begin
+mov(1);
+end;
+--no two employees have same reservation type
+declare
+reserve number;
+begin
+select reservation_type into reserve from reservation where
+reservation_type='yes';
+exception
+when too_many_rows then
+dbms_output.put_line('no two employees have same reservation type');
+when no_data_found then
+dbms_output.put_line('no data found');
+end;
